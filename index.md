@@ -1,3 +1,5 @@
+<script src="test.js" type="text/javascript"/>
+
 ## Welcome to GitHub Pages
 
 Test!

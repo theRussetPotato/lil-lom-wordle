@@ -5,8 +5,8 @@
   <body>
     Welcome to my page!
     <br>
-    ## Test!
+    <b>BOLD</b>
     <br>
-    **Bold**
+    <i>italic</i>
   </body>
 </html>

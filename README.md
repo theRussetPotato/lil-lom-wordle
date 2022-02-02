@@ -1,1 +1,1 @@
-# lil-lom-wordle
+# lil-potato-wordle

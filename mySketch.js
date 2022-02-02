@@ -1,6 +1,7 @@
 function setup() {
-	createCanvas(windowWidth, windowHeight);
+	let myCanvas = createCanvas(windowWidth, windowHeight);
 	background(100);
+	console.log(myCanvas.canvas);
 }
 
 function draw() {

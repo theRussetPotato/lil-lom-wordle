@@ -1,6 +1,6 @@
 <html>
   <head>
-    <script src="test.js" type="text/javascript"/>
+    <script src="test.js" type="text/javascript"/></script>
   </head>
   <body>
     Welcome to my page!

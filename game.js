@@ -50,8 +50,8 @@ var otherValidWords = [
 ];
 
 function preload() {
-	soundFormats("wav", "mp3");
-	tada = loadSound("tada.wav");
+	soundFormats("wav");
+	tada = loadSound("tada.mp3");
 	sadTrombone = loadSound("sadTrombone.mp3");
 }
 

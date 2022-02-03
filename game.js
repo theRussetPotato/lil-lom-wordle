@@ -26,22 +26,22 @@ const LETTER_CORRECT_COLOR = "#55AA5F";
 const BUTTON_TEXT_COLOR = "#FFFFFF";
 const BUTTON_BACK_COLOR = "#7D7D7D";
 
-var particlesTimer = 0;
-var wonStreak = 0;
 var won = false;
 var gameOver = false;
+var particlesTimer = 0;
+var wonStreak = 0;
+var cellSize = 0;
+var letterSize = 0;
+var boardWidth = 0;
+var boardHeight = 0;
+var header = 0;
+var theWord = "";
 var particles = [];
 var guesses = [];
 var buttons = {};
 var buttonColors = {};
-var theWord;
-var cellSize;
-var letterSize;
-var boardWidth;
-var boardHeight;
-var header;
-var tada;
-var sadTrombone;
+var tada = null;
+var sadTrombone = null;
 
 var otherValidWords = [
 	"adieu",
@@ -50,34 +50,34 @@ var otherValidWords = [
 ];
 
 function preload() {
-	soundFormats("wav");
+	soundFormats("mp3");
 	tada = loadSound("tada.mp3");
 	sadTrombone = loadSound("sadTrombone.mp3");
 }
 
 function setup() {
 	createCanvas(windowWidth, windowHeight);
-	
+
 	let storedWonStreak = getItem("wonStreak");
 	if (storedWonStreak != null) {
 		wonStreak = storedWonStreak;
 	}
-	
+
 	header = height * 0.12;
-	
+
 	let keyboardHeight = BUTTON_SIZE * 3 + BUTTONS_BOTTOM_MARGIN + CELL_PADDING * MAX_CHANCES + header;
 	cellSize = (height - keyboardHeight) / MAX_CHANCES;
 	letterSize = cellSize * 0.8;
 	boardWidth = WORD_LENGTH * (cellSize + CELL_PADDING);
 	boardHeight = MAX_CHANCES * (cellSize + CELL_PADDING);
-	
+
 	createKeyboard();
 	resetGame();
 }
 
 function draw() {
 	background(BACKGROUND_COLOR);
-	
+
 	let titleSize = boardWidth * 0.1;
 	noStroke();
 	fill(TITLE_COLOR);
@@ -85,33 +85,33 @@ function draw() {
 	textSize(titleSize);
 	textAlign(CENTER, TOP);
 	text("Lil Potato's Wordle", width / 2, titleSize / 2);
-	
+
 	push();
 	translate((width - boardWidth) / 2, header);
-	
+
 	textSize(letterSize);
 	textAlign(LEFT, BASELINE);
 	rectMode(CORNER);
-	
+
 	// Determine if active row has a valid word.
 	let isValidWord = false;
 	if (guesses[guesses.length - 1].length == WORD_LENGTH) {
 		isValidWord = isWordValid(guesses[guesses.length - 1]);
 	}
-	
+
 	for (let row = 0; row < MAX_CHANCES; row++) {
 		let results = {};
 		if (row < guesses.length - 1) {
 			results = analyzeGuess(guesses[row]);
 		}
-		
+
 		for (let column = 0; column < WORD_LENGTH; column++) {
 			// Get this cell's letter.
 			let letter = null;
 			if (row < guesses.length && column < guesses[row].length) {
 				letter = guesses[row][column];
 			}
-			
+
 			// Default styling.
 			fill(CELL_COLOR);
 			stroke(CELL_BORDER_COLOR);
@@ -119,7 +119,7 @@ function draw() {
 			if (row == guesses.length - 1) {  // Run on previous guesses.
 				if (letter) {
 					if (row == guesses.length - 1 && guesses[row].length == WORD_LENGTH && !isValidWord) {
-						stroke(CELL_BORDER_WRONG_COLOR);  // Color borders to indicate that the word doesn't exist. 
+						stroke(CELL_BORDER_WRONG_COLOR);  // Color borders to indicate that the word doesn't exist.
 					} else {
 						stroke(CELL_BORDER_HIGHLIGHT_COLOR);
 					}
@@ -127,7 +127,7 @@ function draw() {
 			} else {  // Run on current guess.
 				if (Object.keys(results).length) {
 					noStroke();
-					
+
 					let result = results[column];
 
 					if (result == WRONG_LETTER) {
@@ -151,30 +151,30 @@ function draw() {
 					}
 				}
 			}
-			
+
 			let x = column * cellSize + column * CELL_PADDING;
 			let y = row * cellSize + row * CELL_PADDING;
 			rect(x, y, cellSize, cellSize);
-			
+
 			if (letter) {
 				fill(LETTER_COLOR);
 				noStroke();
 				text(
-					letter, 
-					x + cellSize / 2 - textWidth(letter) / 2, 
+					letter,
+					x + cellSize / 2 - textWidth(letter) / 2,
 					y + cellSize / 2 + letterSize / 4);
 			}
 		}
 	}
-	
+
 	pop();
-	
+
 	if (won) {
 		displayCenterMessage(wonMessage, color(WON_MSG_COLOR));
 	} else if (gameOver) {
 		displayCenterMessage(`Oops!\nIt was '${theWord}'\n(cue sad trombone)`, color(GAMEOVER_MSG_COLOR));
 	}
-	
+
 	for (let i = particles.length - 1; i > -1; i--) {
 		particles[i].move();
 		particles[i].display();
@@ -182,7 +182,7 @@ function draw() {
 			particles.splice(i, 1);
 		}
 	}
-	
+
 	if (particlesTimer > 0) {
 		particles.push(new Particle());
 		particlesTimer--;
@@ -191,12 +191,12 @@ function draw() {
 
 function displayCenterMessage(msg, msgColor) {
 	let headerTextSize = header * 0.3;
-	
+
 	noStroke();
 	fill(0, 220);
 	rectMode(CORNER);
 	rect(0, 0, width, height);
-	
+
 	textSize(headerTextSize);
 	textAlign(CENTER);
 	textStyle(BOLD);
@@ -220,7 +220,7 @@ function createKeyboard() {
 		["a", "s", "d", "f", "g", "h", "j", "k", "l"],
 		["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"]
 	];
-	
+
 	for (let row = 0; row < allKeys.length; row++) {
 		let totalWidth = allKeys[row].length * BUTTON_SIZE;
 
@@ -229,34 +229,41 @@ function createKeyboard() {
 			if (allKeys[row][i] == "Enter") {
 				offset = -30;
 			}
-			
+
 			button = createButton(allKeys[row][i]);
 			buttons[allKeys[row][i]] = button;
 			button.position(
-				width / 2 - totalWidth / 2 + i * BUTTON_SIZE + offset, 
+				width / 2 - totalWidth / 2 + i * BUTTON_SIZE + offset,
 				height - BUTTONS_BOTTOM_MARGIN - BUTTON_SIZE * (row + 1));
 		}
 	}
-	
-	for (let [key, button] of Object.entries(buttons)) {
-		button.size(BUTTON_SIZE, BUTTON_SIZE);
-		setButtonBackColor(button, color(BUTTON_BACK_COLOR));
-		button.style("color", color(BUTTON_TEXT_COLOR));
-		button.style("font-size", "20px");
-		
-		if (key == "Enter") {
-			button.mousePressed(submitGuess);
-		} else if (key == "Del") {
-			button.mousePressed(deleteLetter);
+
+	let keys = Object.keys(buttons);
+
+	for (let i = 0; i < keys.length; i++) {
+		buttons[keys[i]].size(BUTTON_SIZE, BUTTON_SIZE);
+		setButtonBackColor(buttons[keys[i]], color(BUTTON_BACK_COLOR));
+		buttons[keys[i]].style("color", color(BUTTON_TEXT_COLOR));
+		buttons[keys[i]].style("font-size", "20px");
+		buttons[keys[i]].doubleClicked(onButtonDoubleClicked);
+
+		if (keys[i] == "Enter") {
+			buttons[keys[i]].mousePressed(submitGuess);
+		} else if (keys[i] == "Del") {
+			buttons[keys[i]].mousePressed(deleteLetter);
 		} else {
-			button.mousePressed(function() { 
-				buttonPressed(key);
+			buttons[keys[i]].mousePressed(function() {
+				buttonPressed(keys[i]);
 			});
 		}
 	}
-	
+
 	buttons["Enter"].size(70, BUTTON_SIZE);
 	buttons["Del"].size(70, BUTTON_SIZE);
+}
+
+function onButtonDoubleClicked() {
+
 }
 
 function isWordValid(word) {
@@ -265,7 +272,7 @@ function isWordValid(word) {
 
 function analyzeGuess(guess) {
 	let results = {};
-	
+
 	// Count how many characters appear in the word.
 	let validLetters = {};
 
@@ -308,19 +315,19 @@ function analyzeGuess(guess) {
 			}
 		}
 	}
-	
+
 	return results;
 }
 
 function pickRandomWord() {
 	let newWord = null;
-	
+
 	while(newWord == null) {
 		let word = RiTa.randomWord({
-			minLength: WORD_LENGTH, 
+			minLength: WORD_LENGTH,
 			maxLength: WORD_LENGTH
 		});
-		
+
 		if (!word.includes("'")) {
 			newWord = word;
 		}
@@ -329,7 +336,7 @@ function pickRandomWord() {
 	if (DEBUG_WORD != null) {
 		newWord = DEBUG_WORD;
 	}
-	
+
 	return newWord;
 }
 
@@ -351,16 +358,16 @@ function submitGuess() {
 	if (won || gameOver) {
 		return;
 	}
-	
+
 	let guess = guesses[guesses.length - 1];
 	if (guess.length != WORD_LENGTH) {
 		return;
 	}
-	
+
 	if (!isWordValid(guess)) {
 		return
 	}
-	
+
 	if (guess == theWord) {
 		won = true;
 		wonStreak++;
@@ -382,7 +389,7 @@ function submitLetter(letter) {
 	if (won || gameOver) {
 		return;
 	}
-	
+
 	if (guesses[guesses.length - 1].length < WORD_LENGTH) {
 		guesses[guesses.length - 1] += letter;
 	}
@@ -392,7 +399,7 @@ function deleteLetter() {
 	if (won || gameOver) {
 		return;
 	}
-	
+
 	let guess = guesses[guesses.length - 1];
 	if (guess.length > 0) {
 		guesses[guesses.length - 1] = guess.slice(0, -1);
@@ -400,8 +407,9 @@ function deleteLetter() {
 }
 
 function resetButtonBackColors() {
-	for (let [key, button] of Object.entries(buttons)) {
-		setButtonBackColor(button, color(BUTTON_BACK_COLOR));
+	let keys = Object.keys(buttons);
+	for (let i = 0; i < keys.length; i++) {
+		setButtonBackColor(buttons[keys[i]], color(BUTTON_BACK_COLOR));
 	}
 }
 
@@ -416,7 +424,7 @@ function resetGame() {
 	setupNewGuess();
 }
 
-function keyPressed() {	
+function keyPressed() {
 	if (keyCode == DELETE || keyCode == BACKSPACE) {
 		deleteLetter();
 	} else if (keyCode == ENTER || keyCode == RETURN) {
@@ -428,7 +436,7 @@ function keyTyped() {
 	if (won || gameOver) {
 		return;
 	}
-	
+
 	if (!key || key == "Enter" || key.match(/[a-z]/i) == null) {
 		return;
 	}
@@ -439,8 +447,12 @@ function mouseClicked() {
 	if (mouseY > buttons["q"].position().y) {
 		return;
 	}
-	
+
 	if (won || gameOver) {
 		resetGame();
 	}
+}
+
+function doubleClicked() {
+
 }

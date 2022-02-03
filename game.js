@@ -78,7 +78,7 @@ function setup() {
 function draw() {
 	background(BACKGROUND_COLOR);
 	
-	let titleSize = boardWidth * 0.13;
+	let titleSize = boardWidth * 0.1;
 	noStroke();
 	fill(TITLE_COLOR);
 	textStyle(NORMAL);

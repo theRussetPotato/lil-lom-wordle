@@ -11,9 +11,14 @@ const BUTTON_SIZE = 40;
 const BUTTONS_BOTTOM_MARGIN = 20;
 const PARTICLES_SPAWN_COUNT = 60;
 
+const PREFS_TOTAL_GAMES = "totalGames";
+const PREFS_TOTAL_WINS = "totalWins";
+const PREFS_WIN_STREAK = "winStreak";
+const PREFS_BEST_STREAK = "bestStreak";
+
 const BACKGROUND_COLOR = "#000000";
 const TITLE_COLOR = "#FFFFFF";
-const WON_MSG_COLOR = "#FFFFFF";
+const WIN_MSG_COLOR = "#55AA5F";
 const GAMEOVER_MSG_COLOR = "#C83232";
 const CELL_COLOR = "#000000";
 const CELL_BORDER_COLOR = "#323232";
@@ -29,19 +34,24 @@ const BUTTON_BACK_COLOR = "#7D7D7D";
 var won = false;
 var gameOver = false;
 var particlesTimer = 0;
-var wonStreak = 0;
 var cellSize = 0;
 var letterSize = 0;
 var boardWidth = 0;
 var boardHeight = 0;
 var header = 0;
 var theWord = "";
+var msg = "";
 var particles = [];
 var guesses = [];
 var buttons = {};
 var buttonColors = {};
 var tada = null;
 var sadTrombone = null;
+
+var totalGames = 0;
+var totalWins = 0;
+var winStreak = 0;
+var bestStreak = 0;
 
 var otherValidWords = [
 	"adieu",
@@ -58,18 +68,12 @@ function preload() {
 function setup() {
 	createCanvas(windowWidth, windowHeight);
 
-	let storedWonStreak = getItem("wonStreak");
-	if (storedWonStreak != null) {
-		wonStreak = storedWonStreak;
-	}
+	totalGames = getItem(PREFS_TOTAL_GAMES) || 0;
+	totalWins = getItem(PREFS_TOTAL_WINS) || 0;
+	winStreak = getItem(PREFS_WIN_STREAK) || 0;
+	bestStreak = getItem(PREFS_BEST_STREAK) || 0;
 
 	header = height * 0.12;
-
-	let keyboardHeight = BUTTON_SIZE * 3 + BUTTONS_BOTTOM_MARGIN + CELL_PADDING * MAX_CHANCES + header;
-	cellSize = (height - keyboardHeight) / MAX_CHANCES;
-	letterSize = cellSize * 0.8;
-	boardWidth = WORD_LENGTH * (cellSize + CELL_PADDING);
-	boardHeight = MAX_CHANCES * (cellSize + CELL_PADDING);
 
 	createKeyboard();
 	resetGame();
@@ -170,9 +174,9 @@ function draw() {
 	pop();
 
 	if (won) {
-		displayCenterMessage(wonMessage, color(WON_MSG_COLOR));
+		displayCenterMessage(WIN_MSG_COLOR);
 	} else if (gameOver) {
-		displayCenterMessage(`Oops!\nIt was '${theWord}'\n(cue sad trombone)`, color(GAMEOVER_MSG_COLOR));
+		displayCenterMessage(GAMEOVER_MSG_COLOR);
 	}
 
 	for (let i = particles.length - 1; i > -1; i--) {
@@ -189,20 +193,58 @@ function draw() {
 	}
 }
 
-function displayCenterMessage(msg, msgColor) {
-	let headerTextSize = header * 0.3;
+function resetPrefs() {
+	removeItem(PREFS_TOTAL_GAMES);
+	removeItem(PREFS_TOTAL_WINS);
+	removeItem(PREFS_WIN_STREAK);
+	removeItem(PREFS_BEST_STREAK);
+}
 
+function displayCenterMessage(msgColor) {
 	noStroke();
 	fill(0, 220);
 	rectMode(CORNER);
 	rect(0, 0, width, height);
 
-	textSize(headerTextSize);
-	textAlign(CENTER);
-	textStyle(BOLD);
 	rectMode(CENTER);
+	textAlign(CENTER);
+	noStroke();
 	fill(msgColor);
-	text(msg, width / 2, height / 4, boardWidth);
+
+	let msgHeight = boardHeight - header;
+	let section = msgHeight / 4;
+	let size1 = section * 0.5;
+	let size2 = section * 0.2;
+
+	textSize(section * 0.35);
+	text(msg, width / 2, header, boardWidth);
+
+	fill(255);
+
+	textSize(size1);
+	text(totalGames, width / 2, header + section * 1);
+
+	textSize(size2);
+	text("Total", width / 2, header + size1 + section * 1);
+
+	textSize(size1);
+	winPercentage = int((totalWins / totalGames) * 100);
+	text(winPercentage, width / 2, header + section * 2);
+
+	textSize(size2);
+	text("Win %", width / 2, header + size1 + section * 2);
+
+	textSize(size1);
+	text(winStreak, width / 2, header + section * 3);
+
+	textSize(size2);
+	text("Current Streak", width / 2, header + size1 + section * 3);
+
+	textSize(size1);
+	text(bestStreak, width / 2, header + section * 4);
+
+	textSize(size2);
+	text("Best Streak", width / 2, header + size1 + section * 4);
 }
 
 function buttonPressed(letter) {
@@ -215,6 +257,13 @@ function setButtonBackColor(button, buttonColor) {
 }
 
 function createKeyboard() {
+	let keyboardHeight = BUTTON_SIZE * 3 + BUTTONS_BOTTOM_MARGIN + CELL_PADDING * MAX_CHANCES + header;
+
+	cellSize = (height - keyboardHeight) / MAX_CHANCES;
+	letterSize = cellSize * 0.8;
+	boardWidth = WORD_LENGTH * (cellSize + CELL_PADDING);
+	boardHeight = MAX_CHANCES * (cellSize + CELL_PADDING);
+
 	let allKeys = [
 		["Enter", "z", "x", "c", "v", "b", "n", "m", "Del"],
 		["a", "s", "d", "f", "g", "h", "j", "k", "l"],
@@ -340,14 +389,17 @@ function pickRandomWord() {
 	return newWord;
 }
 
-function generateNewWonMessage() {
-	let rules = {
-		"start": `Holy $exclamation! Your current win streak is ${wonStreak}!`,
-		"exclamation": "moly | guacamole | jeepers | Batman"
-	}
+function generateWinMessage() {
+	let winMsg = [
+		"You got it!",
+		"Nailed it!",
+		"That was it!",
+		"Well done!"
+	];
 
-	let rg = RiTa.grammar(rules);
-	wonMessage = rg.expand();
+	let index = int(random(winMsg.length));
+
+	msg = winMsg[index];
 }
 
 function setupNewGuess() {
@@ -369,20 +421,49 @@ function submitGuess() {
 	}
 
 	if (guess == theWord) {
-		won = true;
-		wonStreak++;
-		storeItem("wonStreak", wonStreak);
-		particlesTimer = PARTICLES_SPAWN_COUNT;
-		generateNewWonMessage();
-		tada.play();
+		triggerWin();
 	} else if (guesses.length == MAX_CHANCES) {
-		gameOver = true;
-		wonStreak = 0;
-		storeItem("wonStreak", wonStreak);
-		sadTrombone.play();
+		triggerGameOver();
 	}
 
 	setupNewGuess();
+}
+
+function triggerWin() {
+	won = true;
+
+	winStreak++;
+	storeItem(PREFS_WIN_STREAK, winStreak);
+
+	totalGames++;
+	storeItem(PREFS_TOTAL_GAMES, totalGames);
+
+	totalWins++;
+	storeItem(PREFS_TOTAL_WINS, totalWins);
+
+	if (winStreak > bestStreak) {
+		bestStreak = winStreak;
+		storeItem(PREFS_BEST_STREAK, bestStreak);
+	}
+
+	particlesTimer = PARTICLES_SPAWN_COUNT;
+
+	generateWinMessage();
+	tada.play();
+}
+
+function triggerGameOver() {
+	gameOver = true;
+
+	winStreak = 0;
+	storeItem(PREFS_WIN_STREAK, winStreak);
+
+	totalGames++;
+	storeItem(PREFS_TOTAL_GAMES, totalGames);
+
+	msg = `The word was\n'${theWord}'`;
+
+	sadTrombone.play();
 }
 
 function submitLetter(letter) {

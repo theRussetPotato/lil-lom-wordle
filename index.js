@@ -15,6 +15,7 @@ const PREFS_TOTAL_GAMES = "totalGames";
 const PREFS_TOTAL_WINS = "totalWins";
 const PREFS_WIN_STREAK = "winStreak";
 const PREFS_BEST_STREAK = "bestStreak";
+const PREFS_BEST_TIME = "bestTime";
 
 const BACKGROUND_COLOR = "#000000";
 const TITLE_COLOR = "#FFFFFF";
@@ -39,6 +40,8 @@ var letterSize = 0;
 var boardWidth = 0;
 var boardHeight = 0;
 var header = 0;
+var startTime = 0;
+var solveTime = 0;
 var theWord = "";
 var msg = "";
 var particles = [];
@@ -52,6 +55,7 @@ var totalGames = 0;
 var totalWins = 0;
 var winStreak = 0;
 var bestStreak = 0;
+var bestTime = -1;
 
 var otherValidWords = [
 	"adieu",
@@ -72,6 +76,7 @@ function setup() {
 	totalWins = getItem(PREFS_TOTAL_WINS) || 0;
 	winStreak = getItem(PREFS_WIN_STREAK) || 0;
 	bestStreak = getItem(PREFS_BEST_STREAK) || 0;
+	bestTime = getItem(PREFS_BEST_TIME) || -1;
 
 	header = height * 0.12;
 
@@ -198,6 +203,7 @@ function resetPrefs() {
 	removeItem(PREFS_TOTAL_WINS);
 	removeItem(PREFS_WIN_STREAK);
 	removeItem(PREFS_BEST_STREAK);
+	removeItem(PREFS_BEST_TIME);
 }
 
 function displayCenterMessage(msgColor) {
@@ -212,7 +218,7 @@ function displayCenterMessage(msgColor) {
 	fill(msgColor);
 
 	let msgHeight = boardHeight - header;
-	let section = msgHeight / 4;
+	let section = msgHeight / 6;
 	let size1 = section * 0.5;
 	let size2 = section * 0.2;
 
@@ -222,29 +228,41 @@ function displayCenterMessage(msgColor) {
 	fill(255);
 
 	textSize(size1);
-	text(totalGames, width / 2, header + section * 1);
+	text(winStreak, width / 2, header + section * 1);
 
 	textSize(size2);
-	text("Total", width / 2, header + size1 + section * 1);
+	text("Current Streak", width / 2, header + size1 + section * 1);
+
+	textSize(size1);
+	text(bestStreak, width / 2, header + section * 2);
+
+	textSize(size2);
+	text("Best Streak", width / 2, header + size1 + section * 2);
+
+	textSize(size1);
+	text(solveTime, width / 2, header + section * 3);
+
+	textSize(size2);
+	text("Solve Time", width / 2, header + size1 + section * 3);
+
+	textSize(size1);
+	text(bestTime, width / 2, header + section * 4);
+
+	textSize(size2);
+	text("Best Time", width / 2, header + size1 + section * 4);
 
 	textSize(size1);
 	winPercentage = int((totalWins / totalGames) * 100);
-	text(winPercentage, width / 2, header + section * 2);
+	text(winPercentage, width / 2, header + section * 5);
 
 	textSize(size2);
-	text("Win %", width / 2, header + size1 + section * 2);
+	text("Win %", width / 2, header + size1 + section * 5);
 
 	textSize(size1);
-	text(winStreak, width / 2, header + section * 3);
+	text(totalGames, width / 2, header + section * 6);
 
 	textSize(size2);
-	text("Current Streak", width / 2, header + size1 + section * 3);
-
-	textSize(size1);
-	text(bestStreak, width / 2, header + section * 4);
-
-	textSize(size2);
-	text("Best Streak", width / 2, header + size1 + section * 4);
+	text("Total Games", width / 2, header + size1 + section * 6);
 }
 
 function buttonPressed(letter) {
@@ -420,6 +438,9 @@ function submitGuess() {
 		return
 	}
 
+	let rawSolveTime = (Date.now() - startTime) / 1000;
+	solveTime = round(rawSolveTime * 100) / 100;
+
 	if (guess == theWord) {
 		triggerWin();
 	} else if (guesses.length == MAX_CHANCES) {
@@ -444,6 +465,11 @@ function triggerWin() {
 	if (winStreak > bestStreak) {
 		bestStreak = winStreak;
 		storeItem(PREFS_BEST_STREAK, bestStreak);
+	}
+
+	if (bestTime < 0 || solveTime < bestTime) {
+		bestTime = solveTime;
+		storeItem(PREFS_BEST_TIME, bestTime);
 	}
 
 	particlesTimer = PARTICLES_SPAWN_COUNT;
@@ -503,6 +529,7 @@ function resetGame() {
 	resetButtonBackColors();
 	theWord = pickRandomWord();
 	setupNewGuess();
+	startTime = Date.now();
 }
 
 function keyPressed() {

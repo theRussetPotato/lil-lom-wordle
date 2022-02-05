@@ -16,4 +16,4 @@ The game has some simple rules:
 
 ## Preview ##
 
-![image](https://user-images.githubusercontent.com/14979497/152559422-98227519-85af-46bb-9c62-4cbbdb9ce5df.png)
+![image](https://user-images.githubusercontent.com/14979497/152629236-2696f836-ad9f-4a37-9da0-d6b22fe3a986.png)

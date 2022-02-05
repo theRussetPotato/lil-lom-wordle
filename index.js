@@ -7,7 +7,8 @@ const BAD_SPOT_LETTER = 1;
 const CORRECT_LETTER = 2;
 
 const CELL_PADDING = 5;
-const BUTTON_SIZE = 40;
+const BUTTON_WIDTH = 40;
+const BUTTON_HEIGHT = 60;
 const BUTTONS_BOTTOM_MARGIN = 20;
 const PARTICLES_SPAWN_COUNT = 60;
 
@@ -40,6 +41,7 @@ var letterSize = 0;
 var boardWidth = 0;
 var boardHeight = 0;
 var header = 0;
+var keyboardHeight = 0;
 var startTime = 0;
 var solveTime = 0;
 var theWord = "";
@@ -79,6 +81,11 @@ function setup() {
 	bestTime = getItem(PREFS_BEST_TIME) || -1;
 
 	header = height * 0.12;
+	keyboardHeight = BUTTON_HEIGHT * 3 + BUTTONS_BOTTOM_MARGIN + CELL_PADDING * MAX_CHANCES + header;
+	cellSize = (height - keyboardHeight) / MAX_CHANCES;
+	letterSize = cellSize * 0.8;
+	boardWidth = WORD_LENGTH * (cellSize + CELL_PADDING);
+	boardHeight = MAX_CHANCES * (cellSize + CELL_PADDING);
 
 	createKeyboard();
 	resetGame();
@@ -275,13 +282,6 @@ function setButtonBackColor(button, buttonColor) {
 }
 
 function createKeyboard() {
-	let keyboardHeight = BUTTON_SIZE * 3 + BUTTONS_BOTTOM_MARGIN + CELL_PADDING * MAX_CHANCES + header;
-
-	cellSize = (height - keyboardHeight) / MAX_CHANCES;
-	letterSize = cellSize * 0.8;
-	boardWidth = WORD_LENGTH * (cellSize + CELL_PADDING);
-	boardHeight = MAX_CHANCES * (cellSize + CELL_PADDING);
-
 	let allKeys = [
 		["Enter", "z", "x", "c", "v", "b", "n", "m", "Del"],
 		["a", "s", "d", "f", "g", "h", "j", "k", "l"],
@@ -289,29 +289,30 @@ function createKeyboard() {
 	];
 
 	for (let row = 0; row < allKeys.length; row++) {
-		let totalWidth = allKeys[row].length * BUTTON_SIZE;
+		let totalWidth = allKeys[row].length * BUTTON_WIDTH;
 
 		for (let i = 0; i < allKeys[row].length; i++) {
 			let offset = 0;
 			if (allKeys[row][i] == "Enter") {
-				offset = -30;
+				offset = -25;
 			}
 
 			button = createButton(allKeys[row][i]);
 			buttons[allKeys[row][i]] = button;
 			button.position(
-				width / 2 - totalWidth / 2 + i * BUTTON_SIZE + offset,
-				height - BUTTONS_BOTTOM_MARGIN - BUTTON_SIZE * (row + 1));
+				width / 2 - totalWidth / 2 + i * BUTTON_WIDTH + offset,
+				height - BUTTONS_BOTTOM_MARGIN - BUTTON_HEIGHT * (row + 1));
 		}
 	}
 
 	let keys = Object.keys(buttons);
+	let paddingMult = 0.9;
 
 	for (let i = 0; i < keys.length; i++) {
-		buttons[keys[i]].size(BUTTON_SIZE, BUTTON_SIZE);
+		buttons[keys[i]].size(BUTTON_WIDTH * paddingMult, BUTTON_HEIGHT * paddingMult);
 		setButtonBackColor(buttons[keys[i]], color(BUTTON_BACK_COLOR));
 		buttons[keys[i]].style("color", color(BUTTON_TEXT_COLOR));
-		buttons[keys[i]].style("font-size", "20px");
+		buttons[keys[i]].style("font-size", "18px");
 		buttons[keys[i]].doubleClicked(onButtonDoubleClicked);
 
 		if (keys[i] == "Enter") {
@@ -325,8 +326,8 @@ function createKeyboard() {
 		}
 	}
 
-	buttons["Enter"].size(70, BUTTON_SIZE);
-	buttons["Del"].size(70, BUTTON_SIZE);
+	buttons["Enter"].size(62, BUTTON_HEIGHT * paddingMult);
+	buttons["Del"].size(60, BUTTON_HEIGHT * paddingMult);
 }
 
 function onButtonDoubleClicked() {
